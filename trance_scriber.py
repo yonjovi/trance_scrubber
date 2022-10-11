@@ -2,9 +2,9 @@ import whisper
 import streamlit as st
 import streamlit_ext as ste
 import boto3
-import time
 import pytube
-
+import openai
+import time
 
 s3 = boto3.client('s3',
                   region_name=st.secrets['region_name'],
@@ -24,6 +24,25 @@ def upload_audio_to_s3(file, bucket, s3_file):
         time.sleep(9)
         st.error('File not found.')
         return False
+
+
+def summarise(text_input):
+    openai.api_key = st.secrets['openai_api_key']
+
+    # text_input = text_input
+    prompt = f"Summarize this in dot points:\n\n{text_input}",
+
+    response = openai.Completion.create(
+        model='text-davinci-002',
+        prompt=f'Summarize this in dot points:\n\n{text_input}',
+        temperature=0.7,
+        max_tokens=256,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0
+    )
+
+    return response['choices'][0]['text']
 
 
 st.header('Transcribe this!')
@@ -110,6 +129,14 @@ with st.form('silent-whisper', clear_on_submit=False):
 if formatted_result_app is not None and yt_video is not None:
     ste.download_button('Download', formatted_result_app,
                         f'{yt_video.title} transcribed.txt')
+    st.subheader(f'Summary of text transcribed from "{yt_video.title}":')
+    with st.spinner('Summarising...🌞🌞🌞'):
+        summary = summarise(result_app)
+        st.write(summary)
 elif formatted_result_app is not None and uploaded_file is not None:
     ste.download_button('Download', formatted_result_app,
                         f'{uploaded_file.name} transcribed.txt')
+    st.subheader(f'Summary of text transcribed from "{uploaded_file.name}":')
+    with st.spinner('Summarising...🌞🌞🌞'):
+        summary = summarise(result_app)
+        st.write(summary)
