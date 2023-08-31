@@ -1,2 +1,3 @@
 *.mp4
 .streamlit/secrets.toml
+.DS_Store
